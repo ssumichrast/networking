@@ -11,6 +11,12 @@
 # On member switches, leave to default (128).
 fcdomain priority 64
 
+# Configure global system defaults
+## Default all ports to F ports. Ensures that no automatic trunking is established.
+system default switchport mode F
+## Default new zones to enable Smart Zoning
+system default zone smart-zone enable
+
 # NTP
 ntp server ntp.domain.net
 ## Distribute NTP configuration via CFS to the fabric
@@ -58,10 +64,7 @@ vsan 1 suspend
 
 # Zoning
 zone mode enhanced vsan ##
+# Following line only required if the global system default wasn't set to smart zoning
 zone smart-zoning enable vsan ##
 zone confirm-commit enable vsan ##
 zone commit vsan ##
-
-# Configure interface defaults
-## Default all ports to F ports. Ensures that no automatic trunking is established.
-system default switchport mode F
