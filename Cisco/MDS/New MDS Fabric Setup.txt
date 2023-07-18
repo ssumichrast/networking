@@ -1,0 +1,67 @@
+# New MDS Fabric Setup
+
+## This setup is for instanciating a brand new MDS fabric.
+## While the only command that should be run on the switch desired to be principal is the fcdomain priority command,
+## I would recommend running all of the setup on one MDS switch that will be principal first, and then join other 
+## switches to the FC domain.
+
+# fcdomain priority - Configures the priority of the switch in a domain. 1 = highest, 255 = lowest, 128 = default
+# On Principal switch set the default priority to half the default. Bring the principal switch up first with this
+# lower priority. Ensures that any new devices that join will never be able to usurp principal
+# On member switches, leave to default (128).
+fcdomain priority 64
+
+# NTP
+ntp server ntp.domain.net
+## Distribute NTP configuration via CFS to the fabric
+ntp distribute
+ntp commit
+
+# SYSLOG
+logging server syslog.domain.net
+## Distribute logging configuration via CFS
+logging distribute
+logging commit
+
+# Callhome
+snmp-server contact admin@domain.net
+callhome
+email-contact admin@domain.net
+phone-contact +1-555-555-5555
+streetaddress 1234 Domain Lane
+enable
+distribute
+commit
+
+# Switch to Enhanced device alias database
+device-alias mode enhanced
+device-alias commit
+
+# Create VSANs
+# Different VSANs created for fabric A and B to ensure that even if switches from different fabrics get connected
+# they won't attempt any merge operations at all. Delivers guaranteed isolation
+## VSAN 1 = Disabled (can't be removed)
+## VSAN 11 = Production Fabric A
+## VSAN 12 = Production Fabric B
+## VSAN 13 = Direct Attached A (e.g.: UCS mini to storage array)
+## VSAN 14 = Direct Attached B
+
+vsan database
+vsan 11
+vsan 11 name "Production - A"
+#vsan 12
+#vsan 12 name "Production - B
+
+# put all interfaces into new vsan
+vsan 11 interface 1/1-48
+vsan 1 suspend
+
+# Zoning
+zone mode enhanced vsan ##
+zone smart-zoning enable vsan ##
+zone confirm-commit enable vsan ##
+zone commit vsan ##
+
+# Configure interface defaults
+## Default all ports to F ports. Ensures that no automatic trunking is established.
+system default switchport mode F
